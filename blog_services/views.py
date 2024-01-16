@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from django.shortcuts import render
 
 # Create your views here.
@@ -8,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .serializer import ReporterSerializer
 from .models import Reporter
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 
 def index(request):
@@ -28,14 +31,23 @@ def index(request):
 
 class ReporterView(generics.GenericAPIView):
     serializer_class = ReporterSerializer
+    queryset = Reporter.objects.all()
 
-    # def get(self,*args,**kwargs):
-    #     reporters = Reporter.objects.all()
-    #     serializer = self.serializer_class(reporters, many=True)
-    #     return Response(serializer.data)
-
-    def get(self, *args, **kwargs):
-        reporters = Reporter.objects.all()
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "search_key", openapi.IN_QUERY, default=None,
+                type=openapi.TYPE_STRING  , description="send string for user searching on bases of name"
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        # search_key = request.query_params.get('search_key')
+        search_key = request.GET.get("search_key")
+        if search_key:
+            reporters = Reporter.objects.filter(Q(first_name__icontains=search_key) | Q(last_name__icontains = search_key))
+        else:
+            reporters = self.queryset.all()
         paginated = self.paginate_queryset(reporters)
         serialized = self.get_serializer(paginated, many=True)
         return self.get_paginated_response(serialized.data)
@@ -86,5 +98,5 @@ class ReporterDetailView(generics.GenericAPIView):
         if kwargs.get("pk"):
             data = self.queryset.get(pk=kwargs.get('pk'))
             data.delete()
-            return Response(status= status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
