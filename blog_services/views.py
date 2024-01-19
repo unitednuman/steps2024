@@ -32,6 +32,7 @@ def index(request):
 class ReporterView(generics.GenericAPIView):
     serializer_class = ReporterSerializer
     queryset = Reporter.objects.all()
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         manual_parameters=[
