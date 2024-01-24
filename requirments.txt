@@ -2,3 +2,4 @@ Django==5.0.1
 djangorestframework==3.14.0
 drf-yasg==1.21.7
 djangorestframework-simplejwt==5.3.1
+djoser==2.2.2
